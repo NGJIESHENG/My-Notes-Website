@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset = "UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 ">
+    <title>My Notes</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+</head>
+<body>
+    <header>
+        <h1>My Notes</h1>
+    </header>
+    <main>
+        <h2>Upload Your Notes</h2>
+        <form action = "/upload" method=" post" enctype=" multipart/form-data">
+            <input type = "file" id = "fileUpload" name="file" accept=".txt,.pdf,.jpg,.png">
+            <br>
+            <div id="preview"></div>
+            <br>
+            <button type = "submit">Upload</button>
+        </form>
+        <script src="script.js"></script>
+    </main>
+    <footer>
+        <p>&copy; 2025 My Notes Website</p>
+    </footer>
+</body>
+
+</html>
