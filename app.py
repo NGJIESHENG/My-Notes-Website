@@ -1,9 +1,14 @@
 #Flask server
 from flask import Flask, render_template, request, redirect, url_for
 import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER']='uploads'
+app.config['MAX_CONTENT_LENGTH']= 8 * 1024 * 1024
+
+#ensure upload folder exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 #homepage route
 @app.route('/')

@@ -14,21 +14,13 @@ document.getElementById("fileUpload").addEventListener("change",function(event){
             img.style.maxWidth = "200px";
             img.style.marginTop = "10px";
             preview.appendChild(img);
-        }else if (fileType==="application/pdf"){
-            //if file is pdf show a message
+        }else if (fileType==="application/pdf" || fileType.startsWith("text/")){
+            //if file is pdf and text show a message
             let pdfMessage = document.createElement("p");
-            pdfMessage.textContent= "PDF selected: "+ file.name;
+            pdfMessage.textContent= "File selected: "+ file.name;
             preview.appendChild(pdfMessage);
-        }else if (fileType.startsWith("text/")){
-            //if its a text file display its content
-            let reader = new FileReader();
-            reader.onload = function(e){
-                let textPreview = document.createElement("pre");
-                textPreview.textContent = e.target.result;
-                preview.appendChild(textPreview);
-            };
-            reader.readAsText(file);
-        }else{
+        }
+        else{
             preview.textContent= "File type is not supported for preview.";
         }
     }
