@@ -4,6 +4,10 @@ document.getElementById("fileUpload").addEventListener("change",function(event){
 
     preview.innerHTML = "";
 
+document.getElementById('toogle-sidebar').addEventListener('click', function(){
+    document.querySelector('.sidebar').classList.toogle('collapsed');
+});
+
     if(file) {
         let fileType = file.type;
 
