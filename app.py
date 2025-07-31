@@ -16,9 +16,9 @@ db= SQLAlchemy(app)
 
 class User(db.Model):
     id=db.Column(db.Integer, primary_key=True)
-    username = db.column(db.String(80), unique=True, mullable=False)
-    password = db.column(db.String(120), nullable=False)
-    is_admin = db.column(db.Boolean, default=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
 with app.app_context():
     db.create_all()
@@ -40,7 +40,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def index():
     return render_template('index.html')
 
-@app.routr('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
@@ -82,6 +82,7 @@ def login():
             return redirect(url_for('index'))
         
         flash('Invalid username or password')
+        return redirect(url_for('login'))
 
     return render_template('login.html')
     
@@ -102,7 +103,7 @@ def upload_file():
         flash('Please login first')
         return redirect (url_for('login'))
    
-    user=user.query.get(session['user_id'])
+    user = User.query.get(session['user_id'])
 
     if not user or not user.is_admin:
         flash('ADmin privileges required')
@@ -114,11 +115,9 @@ def upload_file():
     
 
     file=request.files['file']
-
     if file.filename == '':
         flash('No selected file')
         return redirect(url_for('index'))
-    
     
     if file:
         filename = secure_filename(file.filename)
