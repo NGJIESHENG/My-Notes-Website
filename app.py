@@ -35,9 +35,15 @@ with app.app_context():
 #ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-#homepage route
+#route
 @app.route('/')
+def landing():
+    return render_template('landing.html')
+
+@app.route('/app')
 def index():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     return render_template('index.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -92,7 +98,7 @@ def login():
 def logout():
     session.clear()
     flash('You have been logged out', 'info')
-    return redirect(url_for('index'))
+    return redirect(url_for('landing'))
 
 
 #handling file upload route
@@ -106,7 +112,7 @@ def upload_file():
     user = User.query.get(session['user_id'])
 
     if not user or not user.is_admin:
-        flash('ADmin privileges required')
+        flash('Admin privileges required')
         return redirect(url_for('index'))
 
     if 'file' not in request.files:
@@ -122,7 +128,7 @@ def upload_file():
     if file:
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
-        flash(f'File{file.filename} uploaded successfully!')
+        flash(f'File {file.filename} uploaded successfully!')
         return redirect(url_for('index'))
     
 

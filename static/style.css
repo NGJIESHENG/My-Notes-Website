@@ -94,6 +94,14 @@ body{
     .main-content{
         margin-left: 0;
     }
+    .herosection{
+        padding: 3rem 0;
+    }
+    .cta-buttons.btn{
+        display: block;
+        width: 80%;
+        margin: 0.5rem auto;
+    }
 }
 
 header{
@@ -158,4 +166,31 @@ button{
 }
 button:hover {
     background-color: #218838;
+}
+
+/*landing page style */
+.herosection{
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    color: white;
+    padding: 5rem 0;
+    text-align: center;
+}
+
+.feature-icon{
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #3498db;
+}
+
+.cta-buttons.btn{
+    margin: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+.screenshot{
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+    height: auto;
 }

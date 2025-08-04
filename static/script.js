@@ -4,10 +4,6 @@ document.getElementById("fileUpload").addEventListener("change",function(event){
 
     preview.innerHTML = "";
 
-document.getElementById('toogle-sidebar').addEventListener('click', function(){
-    document.querySelector('.sidebar').classList.toogle('collapsed');
-});
-
     if(file) {
         let fileType = file.type;
 
@@ -28,4 +24,8 @@ document.getElementById('toogle-sidebar').addEventListener('click', function(){
             preview.textContent= "File type is not supported for preview.";
         }
     }
+});
+
+document.getElementById('toogle-sidebar').addEventListener('click', function(){
+    document.querySelector('.sidebar').classList.toogle('collapsed');
 });
