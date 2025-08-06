@@ -194,3 +194,31 @@ button:hover {
     max-width: 100%;
     height: auto;
 }
+
+/*file pages */
+.file-icon{
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+}
+
+.file-actions .btn{
+    padding: 0.25rem 0.5rem;
+    font-size: 0.87u5rem;
+}
+
+@media(max-width: 76px){
+    .table-responsive{
+        overflow-x: auto;
+    }
+}
+
+.empty-state{
+    padding: 3rem 0;
+    text-align: center;
+    color: #6c757d;
+}
+
+.empty-state i{
+    font-size: 4rem;
+    opacity: 0.5;
+}

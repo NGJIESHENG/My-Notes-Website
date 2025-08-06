@@ -4,6 +4,9 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+from datetime import datetime
+from flask_migrate import Migrate
+
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER']='uploads'
@@ -13,6 +16,14 @@ app.config['SQLALCHEMY_DATABASE_URI']='sqlite:///user.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']= False
 
 db= SQLAlchemy(app)
+migrate= Migrate(app, db)
+
+class File(db.Model):
+    id=db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    upload_date=db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    is_public = db.Column (db.Boolean, default=False)
 
 class User(db.Model):
     id=db.Column(db.Integer, primary_key=True)
@@ -102,7 +113,7 @@ def logout():
 
 
 #handling file upload route
-@app.route('/upload', methods=['POST'])
+@app.route('/upload', methods=['GET','POST'], endpoint='upload')
 def upload_file():
 
     if 'user_id' not in session:
@@ -127,10 +138,70 @@ def upload_file():
     
     if file:
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
-        flash(f'File {file.filename} uploaded successfully!')
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+#save files in db
+        new_file = File(
+            filename=filename,
+            user_id=user.id,
+            is_public=request.form.get("make_public") == 'on'
+        )
+        db.session.add(new_file)
+        db.session.commit()
+
+        flash(f'File {filename} uploaded successfuly!')
         return redirect(url_for('index'))
+
+@app.route('/files')
+def list_files():
+    if 'user_id' not in session:
+        flash('Please login to view files')
+        return redirect (url_for('login'))
     
+    user= User.query.get(session['user_id'])
+
+    files = File.query.filter(
+        (File.is_public == True) |
+        (File.user_id == user.id)
+    ).all()
+
+    for file in files:
+        try:
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.size = os.path.getsize(filepath)
+        except:
+            file.size=0 #not found
+
+    return render_template('files.html', files=files)
+
+@app.route('/delete/<int:file_id>', methods=['POST'])
+def delete_file(file_id):
+    if'user_id' not in session:
+        flash('Please login first')
+        return redirect (url_for('login'))
+    
+    file = File.query.get_or_404(file_id)
+
+    #permission
+    if file.user_id != session['user_id'] and not session.get('is_admin'):
+        flash('You do not have permission to delete this file')
+        return redirect(url_for('list_files'))
+    
+    try:
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+        db.session.delete(file)
+        db.sesison.commit()
+
+        flash('File deleted successfully')
+    except Exception as e:
+        flash('Error deleting file')
+
+    return redirect(url_for('list_files'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
