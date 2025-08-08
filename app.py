@@ -25,8 +25,18 @@ class File(db.Model):
     upload_date=db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     is_public = db.Column (db.Boolean, default=False)
+    file_type = db.Column(db.String(20))
 
     uploader = db.relationship('User', backref=db.backref('files', lazy=True))
+
+    def get_file_type(self):
+        if self.filename.lower().endswith(('.png','.jpg','.jpeg','.gif')):
+            return 'image'
+        elif self.filename.lower().endswith(('.pdf')):
+            return 'pdf'
+        elif self.filename.lower().endswith(('.txt')):
+            return 'text'
+        return 'other'
 
 class User(db.Model):
     id=db.Column(db.Integer, primary_key=True)
@@ -153,7 +163,7 @@ def upload_file():
             filename=filename,
             size=file_size,
             user_id=user.id,
-            is_public=request.form.get("make_public") == 'on',
+            is_public=True if user.is_admin else request.form.get("make_public") == 'on',
             uploader=user
             
         )
@@ -234,6 +244,38 @@ def download_file(file_id):
     except FileNotFoundError:
         flash('File not found on server')
         return redirect(url_for('list_files'))
+    
+@app.route('/view/<int:file_id>')
+def view_file(file_id):
+    if 'user_id' not in session:
+        flash('Please login first')
+        return redirect (url_for('login'))
+    
+    file = File.query.get_or_404(file_id)
+
+    if not file.ispublic and file.user_id != session['user_id']:
+        flash('You do not have the permission to view this file')
+        return redirect (url_for('list_files'))
+    
+    file_type = file.get_file_type()
+
+    if file_type == 'image':
+        return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename)
+    elif file_type == 'text':
+        try:
+            with open (os.path.join(app.config['UPLOAD_FOLDER'], file.filename), 'r') as f:
+                content = f.read()
+            return render_template('view_text.html', content=content, file=file)
+        except:
+            flash('Could nit read text file')
+            return redirect(url_for('list_files'))
+    elif file_type == 'pdf':
+        return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename, mimetype='application/pdf')
+    else:
+        flash('File type cannot be displayed')
+        return redirect (url_for('list_files'))
+
+
     
 if __name__ == '__main__':
     app.run(debug=True)
