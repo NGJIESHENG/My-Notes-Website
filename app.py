@@ -29,12 +29,12 @@ class File(db.Model):
 
     uploader = db.relationship('User', backref=db.backref('files', lazy=True))
 
-    def get_file_type(self):
-        if self.filename.lower().endswith(('.png','.jpg','.jpeg','.gif')):
+    def get_file_type(filename):
+        if filename.lower().endswith(('.png','.jpg','.jpeg','.gif')):
             return 'image'
-        elif self.filename.lower().endswith(('.pdf')):
+        elif filename.lower().endswith(('.pdf')):
             return 'pdf'
-        elif self.filename.lower().endswith(('.txt')):
+        elif filename.lower().endswith(('.txt')):
             return 'text'
         return 'other'
 
@@ -258,7 +258,7 @@ def view_file(file_id):
         flash('You do not have the permission to view this file')
         return redirect (url_for('list_files'))
     
-    file_type = file.get_file_type()
+    file_type = File.get_file_type(file.filename)
 
     if file_type == 'image':
         return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename)
