@@ -164,7 +164,8 @@ def upload_file():
             size=file_size,
             user_id=user.id,
             is_public=True if user.is_admin else request.form.get("make_public") == 'on',
-            uploader=user
+            uploader=user,
+            file_type=File.get_file_type(filename)
             
         )
         db.session.add(new_file)
@@ -253,7 +254,7 @@ def view_file(file_id):
     
     file = File.query.get_or_404(file_id)
 
-    if not file.ispublic and file.user_id != session['user_id']:
+    if not file.is_public and file.user_id != session['user_id']:
         flash('You do not have the permission to view this file')
         return redirect (url_for('list_files'))
     
@@ -274,8 +275,6 @@ def view_file(file_id):
     else:
         flash('File type cannot be displayed')
         return redirect (url_for('list_files'))
-
-
-    
+   
 if __name__ == '__main__':
     app.run(debug=True)

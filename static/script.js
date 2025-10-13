@@ -26,6 +26,6 @@ document.getElementById("fileUpload").addEventListener("change",function(event){
     }
 });
 
-document.getElementById('toogle-sidebar').addEventListener('click', function(){
-    document.querySelector('.sidebar').classList.toogle('collapsed');
+document.getElementById('toggle-sidebar').addEventListener('click', function(){
+    document.querySelector('.sidebar').classList.toggle('collapsed');
 });
