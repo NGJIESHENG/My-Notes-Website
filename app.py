@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from flask_migrate import Migrate
 from flask import send_from_directory
+from flask import flash
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER']='uploads'
@@ -133,46 +134,49 @@ def logout():
 def upload_file():
 
     if 'user_id' not in session:
-        flash('Please login first')
+        flash('Please login first.', 'warning')
         return redirect (url_for('login'))
    
     user = User.query.get(session['user_id'])
 
     if not user or not user.is_admin:
-        flash('Admin privileges required')
-        return redirect(url_for('index'))
-
-    if 'file' not in request.files:
-        flash('No file selected')
-        return redirect(url_for('index'))
+            flash('Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
     
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part in the request.', 'warning')
+            return redirect(url_for('upload'))
+        
 
-    file=request.files['file']
-    if file.filename == '':
-        flash('No selected file')
-        return redirect(url_for('index'))
-    
-    if file:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        file_size= os.path.getsize(filepath)
+        file=request.files['file']
+        if file.filename == '':
+            flash('No selected file.', 'warning')
+            return redirect(url_for('upload'))
+        
+        if file:
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            file_size= os.path.getsize(filepath)
 
-#save files in db
-        new_file = File(
-            filename=filename,
-            size=file_size,
-            user_id=user.id,
-            is_public=True if user.is_admin else request.form.get("make_public") == 'on',
-            uploader=user,
-            file_type=File.get_file_type(filename)
-            
-        )
-        db.session.add(new_file)
-        db.session.commit()
+    #save files in db
+            new_file = File(
+                filename=filename,
+                size=file_size,
+                user_id=user.id,
+                is_public=True if user.is_admin else request.form.get("make_public") == 'on',
+                uploader=user,
+                file_type=File.get_file_type(filename)
+                
+            )
+            db.session.add(new_file)
+            db.session.commit()
 
-        flash(f'File {filename} uploaded successfuly!')
-        return redirect(url_for('index'))
+            flash(f'File {filename} uploaded successfuly!', 'success')
+            return redirect(url_for('list_files'))
+        
+        return render_template('index.html')
 
 @app.route('/files')
 def list_files():
