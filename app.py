@@ -258,17 +258,20 @@ def view_file(file_id):
         flash('You do not have the permission to view this file')
         return redirect (url_for('list_files'))
     
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file_type = File.get_file_type(file.filename)
 
     if file_type == 'image':
         return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename)
     elif file_type == 'text':
         try:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             with open (os.path.join(app.config['UPLOAD_FOLDER'], file.filename), 'r') as f:
                 content = f.read()
             return render_template('view_text.html', content=content, file=file)
-        except:
+        except Exception as e:
             flash('Could nit read text file')
+            print(f"Error reading file: {e}")
             return redirect(url_for('list_files'))
     elif file_type == 'pdf':
         return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename, mimetype='application/pdf')
