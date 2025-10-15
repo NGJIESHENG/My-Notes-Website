@@ -185,7 +185,22 @@ def list_files():
         return redirect (url_for('login'))
     
     user= User.query.get(session['user_id'])
+    search_query = request.args.get('search','').strip()
+    file_type = request.args.get('file_type','').strip()
 
+    if user.is_admin:
+        files = File.query
+    else:
+        files = File.query.filter((File.is_public == True) | (File.user_id == user.id))
+    # Apply search filter
+    if search_query:
+        files = files.filter(File.filename.ilike(f'%{search_query}%'))
+    if file_type:
+        files = files.filter(File.file_type == file_type)
+
+    files = files.order_by(File.id.desc()).all()
+
+    return render_template('files.html', files=files, search_query=search_query, file_type=file_type )
     files = File.query.options(db.joinedload(File.uploader)).filter(
         (File.is_public == True) |
         (File.user_id == user.id)
