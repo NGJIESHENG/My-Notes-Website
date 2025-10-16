@@ -178,7 +178,7 @@ def upload_file():
         
     return render_template('index.html')
 
-@app.route('/files')
+@app.route('/files', methods=['GET'])
 def list_files():
     if 'user_id' not in session:
         flash('Please login to view files')
@@ -198,23 +198,16 @@ def list_files():
     if file_type:
         files = files.filter(File.file_type == file_type)
 
-    files = files.order_by(File.id.desc()).all()
+    files = files.order_by(File.id.desc()).options(db.joinedload(File.uploader)).all()
 
-    return render_template('files.html', files=files, search_query=search_query, file_type=file_type )
-    files = File.query.options(db.joinedload(File.uploader)).filter(
-        (File.is_public == True) |
-        (File.user_id == user.id)
-    ).all()
-
-   
     for file in files:
         try:
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.size = os.path.getsize(filepath)
         except:
-            file.size=0 #not found
+            file.size=0 
 
-    return render_template('files.html', files=files)
+    return render_template('files.html', files=files, search_query=search_query, file_type=file_type)
 
 @app.route('/delete/<int:file_id>', methods=['POST'])
 def delete_file(file_id):
