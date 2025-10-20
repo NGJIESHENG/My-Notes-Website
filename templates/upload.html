@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-body text-center p-5">
+          <h2><i class="fas fa-cloud-upload-alt"></i> Upload Notes</h2>
+          <p class="text-muted">Select files to upload (PDF, TXT, JPG, PNG)</p>
+
+          {% if session.get('is_admin') %}
+          <form action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" id="fileUpload" name="file" class="d-none" accept=".txt,.pdf,.jpg,.png">
+            <label for="fileUpload" class="btn btn-primary btn-lg mt-3">
+              <i class="fas fa-folder-open"></i> Choose File
+            </label>
+
+            <div id="preview" class="mt-4 p-3 bg-light rounded"></div>
+
+            <button type="submit" class="btn btn-success btn-lg mt-3 w-100">
+              <i class="fas fa-upload"></i> Upload Now
+            </button>
+          </form>
+          {% else %}
+          <div class="alert alert-warning">
+            Please login as admin to upload files.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

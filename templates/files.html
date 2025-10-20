@@ -13,8 +13,22 @@
     <div class="app-container">
         <!-- Sidebar -->
         <div class="sidebar">
-            <!-- Your sidebar content -->
-        </div>
+    <div class="logo">
+        <i class="fas fa-rocket"></i> NoteOwl
+    </div>
+    <div class="menu-group">
+        <div class="menu title">NAVIGATION</div>
+        <a href="/" class="menu-item active">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/upload" class="menu-item">
+            <i class="fas fa-upload"></i> Upload
+        </a>
+        <a href="/files" class="menu-item">
+            <i class="fas fa-folder"></i> My Files
+        </a>
+    </div>
+</div>
 
         <!-- Main Content -->
         <div class="main-content">
@@ -162,4 +176,17 @@
         {% endfor %}
     {% endif %}
 {% endwith %}
+<script>
+document.querySelectorAll('.menu-item').forEach(item => {
+    const itemPath = new URL(item.href).pathname;
+    const currentPath = window.location.pathname;
+    if (itemPath === currentPath) {
+        item.classList.add('active');
+    } else {
+        item.classList.remove('active');
+    }
+});
+</script>
+
+
 </html>

@@ -176,7 +176,7 @@ def upload_file():
             flash(f'File {filename} uploaded successfuly!', 'success')
             return redirect(url_for('list_files'))
         
-    return render_template('index.html')
+    return render_template('upload.html')
 
 @app.route('/files', methods=['GET'])
 def list_files():

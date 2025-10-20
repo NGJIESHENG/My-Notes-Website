@@ -1,107 +1,18 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset = "UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0 ">
-    <title>My Notes</title>
-    <!-- bootstrap css-->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- icons-->
-    <link href = "stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <!-- container (sidebar and content)-->
-    <div class = "app-container">
-        <div class = "sidebar">
-            <div class="logo">
-                <i class="fas fa-rocket"></i> NoteOwl
-            </div>
-            <div class="menu-group">
-                <div class = "menu title">NAVIGATION</div>
-                <a href="/" class="menu-item active">
-                    <i class="fas fa-home"></i> Home
-                </a>
-                <a href="/upload" class="menu-item">
-                    <i class = "fas fa-upload"></i> Upload
-                </a>
-                <a href="/files" class="menu-item">
-                    <i class = "fas fa-folder"></i> My files
-                </a>
-                <a href="#" class="menu-item">
-                    <i class="fas fa-cog"></i>Settings
-                </a>
-            </div>
+{% extends "layout.html" %}
 
-            <div class="menu-group">
-                <div class="menu-title">CATEGORIES</div>
-                <a href="#" class="menu-item">
-                    <i class="fas fa-file-alt"></i>Documents
-                </a>
-                <a href="#" class="menu-item">
-                    <i class="fas fa-image"></i>Images
-                </a>
-            </div>
-        </div>
-        <!-- main content-->
-        <div class="main-content">
-            <div class="container my-5">
-                <div class="row justify-content-center">
-                    <div class="col-md-8">
-                        <div class="card shadow">
-                            <div class="card-body text-center p-5">
-                                <h2><i class="fas fa-cloud-upload-alt"></i>Upload Notes</h2>
-                                <p class ="text-muted">Select files to upload (PDF, TXT, JPG, PNG)</p>
-
-                                <!--Upload Form-->
-                            {% if session.get('is_admin') %}
-                                <form action="/upload" method="post" enctype="multipart/form-data">
-                                    <input type="file" id="fileUpload" name="file" class="d-none" accept=".txt,.pdf,.jpg,.png">
-                                    <label for="fileUpload" class="btn btn-primary btn-lg mt-3">
-                                        <i class="fas fa-folder-open"></i> Choose File 
-                                    </label>
-
-                                    <div id="preview" class="mt-4 p-3 bg-light rounded"></div>
-
-                                    <button type="submit" class="btn btn-success btn-lg mt-3 w-100">
-                                        <i class="fas fa-upload"></i> Upload Now
-                                    </button>
-                                </form>
-                            {% else %}
-                                <div class="alert alert-warning">
-                                    Please login as admin to upload files.
-                                </div>
-                            {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!--bootstrap js-->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='script.js')}}"></script>
-
-    <!--sidebar active state--> 
-    <script>
-        document.querySelectorAll('.menu-item').forEach(item => {
-            if (item.href === window.location.href) {
-                item.classList.add('active');
-            }
-        });
-    </script>
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="flashes">
-            {% for category, message in messages %}
-                <div class="alert alert-{{category}}">{{message}}</div>
-            {% endfor %}
-        </div>
-    {% endif %}
-{% endwith %}
-</body>
-
-</html>
+{% block content %}
+<div class="container text-center my-5">
+  <h1>Welcome to NoteOwl</h1>
+  <p class="text-muted">Your all-in-one place to store, upload, and manage notes.</p>
+  <a href="{{ url_for('upload') }}" class="btn btn-primary mt-3">
+    <i class="fas fa-upload"></i> Upload Your First Note
+  </a>
+</div>
+{% endblock %}
+<script>
+document.querySelectorAll('.menu-item').forEach(item => {
+    if (item.href === window.location.href) {
+        item.classList.add('active');
+    }
+});
+</script>
