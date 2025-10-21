@@ -30,13 +30,14 @@ class File(db.Model):
 
     uploader = db.relationship('User', backref=db.backref('files', lazy=True))
 
-    def get_file_type(filename):
-        if filename.lower().endswith(('.png','.jpg','.jpeg','.gif')):
-            return 'image'
-        elif filename.lower().endswith(('.pdf')):
-            return 'pdf'
-        elif filename.lower().endswith(('.txt')):
-            return 'text'
+    @staticmethod
+    def get_file_type(filename): 
+        if filename.lower().endswith(('.png','.jpg','.jpeg','.gif')): 
+            return 'image' 
+        elif filename.lower().endswith(('.pdf')): 
+            return 'pdf' 
+        elif filename.lower().endswith(('.txt')): 
+            return 'text' 
         return 'other'
 
 class User(db.Model):
@@ -273,23 +274,42 @@ def view_file(file_id):
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file_type = File.get_file_type(file.filename)
 
-    if file_type == 'image':
-        return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename)
+    is_raw_request = request.args.get('raw') == 'true'
+    
+    if is_raw_request and (file_type == 'image' or file_type == 'pdf'):
+        mimetype_map = {
+            'image': 'image/*',
+            'pdf': 'application/pdf',
+        }
+        mimetype = mimetype_map.get(file_type, 'application/octet-stream')
+        
+        try:
+            return send_from_directory(
+                app.config['UPLOAD_FOLDER'],
+                file.filename,
+                mimetype=mimetype,
+                as_attachment=False 
+            )
+        except Exception as e:
+            flash('Error serving raw file content.')
+            print(f"Error serving file: {e}")
+            return redirect(url_for('list_files'))
+
     elif file_type == 'text':
         try:
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            with open (os.path.join(app.config['UPLOAD_FOLDER'], file.filename), 'r') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            return render_template('view_text.html', content=content, file=file)
+            return render_template('view.html', file=file, file_type='text', content=content)
         except Exception as e:
-            flash('Could nit read text file')
+            flash('Could not read text file')
             print(f"Error reading file: {e}")
             return redirect(url_for('list_files'))
-    elif file_type == 'pdf':
-        return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename, mimetype='application/pdf')
+    
+    elif file_type == 'image' or file_type == 'pdf':
+        return render_template('view.html', file=file, file_type=file_type)
+
     else:
-        flash('File type cannot be displayed')
-        return redirect (url_for('list_files'))
-   
+        return render_template('view.html', file=file, file_type='other')
+    
 if __name__ == '__main__':
     app.run(debug=True)
