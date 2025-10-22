@@ -2,87 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device=width, initial-scale=1.0">
-    <title>View File - NoteOwl</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/view.css') }}">
+    <title>View File - {{ file.filename }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 40px;
+        }
+        .viewer-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        img, embed {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        .btn-back {
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>
-                <i class="fas fa-file-alt me-2"></i>
-                {{ file.filename }}
-                <small class="text-muted">({{ file.size|filesizeformat }})</small>
-            </h2>
-            <div>
-                <a href="{{ url_for('list_files') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>Back to Files
-                </a>
-                <a href="{{ url_for('download_file', file_id=file.id) }}" class="btn btn-primary ms-2">
-                    <i class="fas fa-download me-1"></i>Download
-                </a>
-            </div>
-        </div>
-        <div class="file-container">
-            {% if file_type == 'image' %}
-                <img src="{{ url_for('view_file',file_id=file.id, raw=true) }}" class="image-view" alt="{{ file.filename }}">
-            {% elif file_type == 'pdf' %}
-                <embed src="{{ url_for('view_file', file_id=file.id, raw=true) }}" type="application/pdf" class="pdf-viewer">
-                    <div class="mt-3 text-center">
-                        <small class="text-muted">PDF viewer may not work in all browsers. Use download button if needed.</small>
-                    </div>
-            {% elif file_type == 'text' %}
-            <div class="d-flex justify-content-between mb-3">
-                <h5>Text Content</h5>
-                <button class="btn btn-sm btn-outline-secondary" onclick="copyToclipboard()">
-                    <i class="fas fa-copy"></i>Copy Text
-                </button>
-            </div>
-            <pre id="file-content">{{ content }}</pre>
+    <div class="viewer-container">
+        <a href="{{ url_for('list_files') }}" class="btn btn-secondary btn-back">&larr; Back to My Files</a>
+        <h3>{{ file.filename }}</h3>
+        <p><small>Uploaded on {{ file.upload_date.strftime('%Y-%m-%d %H:%M') }}</small></p>
+        <hr>
 
+        {% if file_type == 'text' %}
+            <pre>{{ file_content }}</pre>
+        {% elif file_type == 'image' %}
+            <img src="{{ url_for('download_file', file_id=file.id) }}" alt="Image Preview">
+        {% elif file_type == 'pdf' %}
+            <embed src="{{ url_for('preview_file', file_id=file.id) }}" type="application/pdf" width="100%" height="600px">
         {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                This file type cannot be previewed.Please download to view
-            </div>
+            <p>Preview not available for this file type.</p>
+            <a href="{{ url_for('download_file', file_id=file.id) }}" class="btn btn-primary">Download File</a>
         {% endif %}
-        </div>
 
-        <div class="mt-4 card">
-            <div class="card-header">
-                File Details
-            </div>
-            <div class="card-body">
-                <ul class="list-unstyled">
-                    <li><strong>Uploaded by:</strong> {{ file.uploader.username }}</li>
-                    <li><strong>Upload date:</strong>{{ file.upload_date.strftime('%Y-%m-%d %H:%M') }}</li>
-                    <li><strong>Visibilty</strong>{{ 'Public' if file.is_public else 'Private' }}</li>
-                </ul>
-            </div>
-        </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        function copyToClipboard(){
-            const content = document.getElementById('file-content');
-            navigator.clipboard.writeText(content.innerText)
-                .then(() => alert('Text cpopied to clipboard!'))
-                .catch(err => console.error('Failed to copy: ', err));
-        }
-
-        function resizePDFViewer(){
-            const viewer = document.querySelector('.pdf-viewer');
-            if(viewer){
-                viewer.style.height = '${window.innerHeight * 0.7} px';
-            }
-        }
-
-        window.addEventListener('resize', resizePDFViewer);
-        document.addEventListener('DOMContentLoaded', resizePDFViewer);
-    </script>
 </body>
 </html>

@@ -259,57 +259,40 @@ def download_file(file_id):
         flash('File not found on server')
         return redirect(url_for('list_files'))
     
-@app.route('/view/<int:file_id>')
-def view_file(file_id):
-    if 'user_id' not in session:
+@app.route('/preview/<int:file_id>')
+def preview_file(file_id):
+    if 'user_id'not in session:
         flash('Please login first')
-        return redirect (url_for('login'))
+        return redirect(url_for('login'))
     
     file = File.query.get_or_404(file_id)
 
     if not file.is_public and file.user_id != session['user_id']:
-        flash('You do not have the permission to view this file')
-        return redirect (url_for('list_files'))
+        flash('You do not have permission to view this file')
+        return redirect(url_for('list_files'))
     
+    try:
+        return send_from_directory(
+            app.config['UPLOAD_FOLDER'],
+            file.filename,
+            as_attachment=False
+        )
+    except FileNotFoundError:
+        flash('File not found on server')
+        return redirect(url_for('list_files'))
+    
+@app.route('/view/<int:file_id>')
+def view_file(file_id):
+    file = File.query.get_or_404(file_id)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file_type = File.get_file_type(file.filename)
 
-    is_raw_request = request.args.get('raw') == 'true'
-    
-    if is_raw_request and (file_type == 'image' or file_type == 'pdf'):
-        mimetype_map = {
-            'image': 'image/*',
-            'pdf': 'application/pdf',
-        }
-        mimetype = mimetype_map.get(file_type, 'application/octet-stream')
-        
-        try:
-            return send_from_directory(
-                app.config['UPLOAD_FOLDER'],
-                file.filename,
-                mimetype=mimetype,
-                as_attachment=False 
-            )
-        except Exception as e:
-            flash('Error serving raw file content.')
-            print(f"Error serving file: {e}")
-            return redirect(url_for('list_files'))
+    file_content = None
+    if file_type == 'text':
+        with open(file_path, 'r', encoding='utf-8') as f:
+            file_content = f.read()
 
-    elif file_type == 'text':
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            return render_template('view.html', file=file, file_type='text', content=content)
-        except Exception as e:
-            flash('Could not read text file')
-            print(f"Error reading file: {e}")
-            return redirect(url_for('list_files'))
-    
-    elif file_type == 'image' or file_type == 'pdf':
-        return render_template('view.html', file=file, file_type=file_type)
+    return render_template('view.html', file=file, file_type=file_type, file_content=file_content)
 
-    else:
-        return render_template('view.html', file=file, file_type='other')
-    
 if __name__ == '__main__':
     app.run(debug=True)
