@@ -45,16 +45,18 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    role = db.Column(db.String(20), default='user')
 
 
 with app.app_context():
-    db.create_all()
+    #db.create_all()
 
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username = 'admin',
             password=generate_password_hash('admin123'),
-            is_admin=True
+            is_admin=True,
+            role='admin'
         )
         db.session.add(admin)
         db.session.commit()
@@ -120,6 +122,14 @@ def login():
         return redirect(url_for('login'))
 
     return render_template('login.html')
+
+@app.route('/guest_login', methods=['POST'])
+def guest_login():
+    session['user_id'] = None
+    session['username'] = 'Guest'
+    session['role'] = 'guest'
+    flash('You are now browsing as Guest.', 'info')
+    return redirect(url_for('list_files'))
     
     
 
@@ -181,15 +191,23 @@ def upload_file():
 
 @app.route('/files', methods=['GET'])
 def list_files():
-    if 'user_id' not in session:
-        flash('Please login to view files')
+    user=None
+    is_guest = session.get('guest', False)
+
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+    elif not is_guest:
+        flash('Please login to view files', 'danger')
         return redirect (url_for('login'))
     
-    user= User.query.get(session['user_id'])
     search_query = request.args.get('search','').strip()
     file_type = request.args.get('file_type','').strip()
 
-    if user.is_admin:
+    if is_guest:
+        admin_users=User.query.filter_by(is_admin=True).all()
+        admin_ids=[admin.id for admin in admin_users]
+        files = File.query.filter(File.is_public == True, File.user_id.in_(admin_ids))
+    elif user.is_admin:
         files = File.query
     else:
         files = File.query.filter((File.is_public == True) | (File.user_id == user.id))
