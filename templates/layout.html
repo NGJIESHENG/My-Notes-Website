@@ -45,7 +45,7 @@
             {% for category, message in messages %}
             <script>
                 Swal.fire({
-                    icon: "{{ 'success' if category == 'success' else 'warning' if category == 'warning' else 'error'}}",
+                    icon: "{{ category.lower()}}",
                     title: '{{ message }}',
                     showConfirmButton: false,
                     timer: 2000,

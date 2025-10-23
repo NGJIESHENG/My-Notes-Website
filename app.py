@@ -97,7 +97,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        flash('Registration successful ! You can try to login now')
+        flash('Registration successful ! You can try to login now','success')
         return redirect (url_for('login'))
     
     return render_template('register.html')
@@ -113,7 +113,7 @@ def login():
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
             session['is_admin'] = user.is_admin
-            flash('Login successful !')
+            flash('Login successful !','success')
             return redirect(url_for('index'))
         
         flash('Invalid username or password')
@@ -231,9 +231,9 @@ def delete_file(file_id):
         db.session.delete(file)
         db.session.commit()
 
-        flash('File deleted successfully')
+        flash('File deleted successfully','success')
     except Exception as e:
-        flash('Error deleting file')
+        flash('Error deleting file','error')
 
     return redirect(url_for('list_files'))
 
