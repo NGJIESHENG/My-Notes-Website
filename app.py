@@ -125,10 +125,9 @@ def login():
 
 @app.route('/guest_login', methods=['POST'])
 def guest_login():
-    session['user_id'] = None
-    session['username'] = 'Guest'
-    session['role'] = 'guest'
-    flash('You are now browsing as Guest.', 'info')
+    session.clear()
+    session['guest'] = True
+    flash('Logged in as Guest', 'info')
     return redirect(url_for('list_files'))
     
     
@@ -197,8 +196,8 @@ def list_files():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
     elif not is_guest:
-        flash('Please login to view files', 'danger')
-        return redirect (url_for('login'))
+            flash('Please login to view files', 'danger')
+            return redirect(url_for('login'))
     
     search_query = request.args.get('search','').strip()
     file_type = request.args.get('file_type','').strip()
