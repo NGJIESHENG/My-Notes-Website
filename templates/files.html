@@ -1,127 +1,72 @@
-            {% extends "layout.html" %}
-            {% block title %}My files - NoteOwl{% endblock %}
+{% extends "layout.html" %}
+{% block content %}
+<div class="container my-5">
+  <h2 class="mb-4 text-center"><i class="fas fa-folder-open"></i> Shared Files</h2>
+  <p class="text-center text-muted">Browse uploaded notes and resources</p>
 
-            {% block content %}
-            <div class="container mt-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2><i class="fas fa-folder-open me-2"></i>My Files</h2>
-                    {% if session.get('is_admin') %}
-                    <a href="{{ url_for('upload') }}" class="btn btn-primary">
-                        <i class="fas fa-plus me-1"></i> Upload New
-                    </a>
-                    {% endif %}
-                </div>
+  <!-- Search + Filter -->
+  <form method="get" class="d-flex justify-content-center mb-4">
+    <input type="text" name="search" class="form-control w-50 me-2"
+           placeholder="🔍 Search filename..." value="{{ search_query }}">
+    <select name="file_type" class="form-select w-auto me-2">
+      <option value="">All Types</option>
+      <option value="pdf" {% if file_type == 'pdf' %}selected{% endif %}>PDF</option>
+      <option value="text" {% if file_type == 'text' %}selected{% endif %}>Text</option>
+      <option value="image" {% if file_type == 'image' %}selected{% endif %}>Image</option>
+    </select>
+    <button class="btn btn-primary" type="submit">Filter</button>
+  </form>
 
-                <!-- Files Table -->
-                <div class="card">
-                    <div class="card-body">
-                        <form method="GET" action="{{ url_for('list_files') }}" class="d-flex mb-3">
-                            <input type="text" name="search" value="{{ request.args.get('search','') }}"
-                                class="form-control me-2" placeholder="Search files ....">
-                            
-                                <select name="file_type" class="form-select me-2" style="max-width:150px;">
-                                    <option value="">All Types</option>
-                                    <option value="pdf" {% if request.args.get('file_type') == 'pdf' %}selected{% endif %}>PDF</option>
-                                    <option value="jpg" {% if request.args.get('file_type') == 'jpg' %}selected{% endif %}>JPG</option>
-                                    <option value="png" {% if request.args.get('file_type') == 'png' %}selected{% endif %}>PNG</option>
-                                    <option value="txt" {% if request.args.get('file_type') == 'txt' %}selected{% endif %}>TXT</option>
-                                </select>
-                                
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i>Search
-                                </button>
-                        </form>
-                        {% if files %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Filename</th>
-                                        <th>Type</th>
-                                        <th>Size</th>
-                                        <th>Uploaded</th>
-                                        <th>Uploaded By</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for file in files %}
-                                    <tr>
-                                        <td>
-                                            <i class="fas 
-                                                {% if file.filename.endswith('.pdf') %}fa-file-pdf text-danger
-                                                {% elif file.filename.endswith(('.png','.jpg','.jpeg')) %}fa-file-image text-primary
-                                                {% elif file.filename.endswith('.txt') %}fa-file-alt text-info
-                                                {% else %}fa-file text-secondary
-                                                {% endif %} me-2"></i>
-                                            {{ file.filename }}
-                                        </td>
-                                        <td>{{ file.filename.split('.')[-1] | upper }}</td>
-                                        <td>{{ file.size | filesizeformat }}</td>
-                                        <td>{{ file.upload_date.strftime('%Y-%m-%d') }}</td>
-                                        <td>
-                                            {% if file.uploader.id == session['user_id'] %}
-                                            <span class="badge bg-info">You</span>
-                                            {% else %}
-                                            {{ file.uploader.username }}
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="btn-group">
-                                                <a href="{{ url_for('view_file', file_id=file.id) }}" class="btn btn-sm btn-outline-info">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{{ url_for('download_file', file_id=file.id) }}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-download"></i>
-                                                </a>
-                                                {% if file.uploader.id == session['user_id'] or session.get('is_admin') %}
-                                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ file.id }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                                {% endif %}
-                                            </div>
+  {% if files %}
+  <div class="row g-3">
+    {% for file in files %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm border-0 rounded-3 h-100">
+        <div class="card-body text-center">
+          <h5 class="mt-2">{{ file.filename }}</h5>
+          <p class="text-muted small mb-2">
+            Uploaded by: {{ file.uploader.username }}
+          </p>
 
-                                            <!-- Delete Modal -->
-                                            {% if file.uploader.id == session['user_id'] or session.get('is_admin') %}
-                                            <div class="modal fade" id="deleteModal{{ file.id }}" tabindex="-1" aria-hidden="true">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title">Confirm Delete</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            Are you sure you want to delete <strong>{{ file.filename }}</strong>?
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                            <form action="{{ url_for('delete_file', file_id=file.id) }}" method="POST">
-                                                                <button type="submit" class="btn btn-danger">Delete</button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
-                            <h4>No files found</h4>
-                            <p class="text-muted">Upload your first file to get started</p>
-                            {% if session.get('is_admin') %}
-                            <a href="{{ url_for('upload') }}" class="btn btn-primary mt-3">
-                                <i class="fas fa-upload me-1"></i> Upload Files
-                            </a>
-                            {% endif %}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-    {% endblock %}
+          <!-- FILE PREVIEW -->
+          {% if file.file_type == 'image' %}
+            <img src="{{ url_for('preview_file', file_id=file.id) }}" 
+                 class="img-fluid rounded mb-2" style="max-height: 150px;">
+          {% elif file.file_type == 'pdf' %}
+            <embed src="{{ url_for('preview_file', file_id=file.id) }}" 
+                   type="application/pdf" width="100%" height="150px" class="rounded mb-2">
+          {% elif file.file_type == 'text' %}
+            {% set path = 'uploads/' + file.filename %}
+            <iframe src="{{ url_for('preview_file', file_id=file.id) }}" 
+                    class="rounded bg-light" width="100%" height="150px"></iframe>
+          {% else %}
+            <i class="fas fa-file fa-3x text-muted mb-2"></i>
+          {% endif %}
+
+          <p class="text-muted small">
+            Type: {{ file.file_type | capitalize }} | Size: {{ (file.size / 1024)|round(1) }} KB
+          </p>
+
+          <div class="mt-2">
+            <a href="{{ url_for('download_file', file_id=file.id) }}" class="btn btn-outline-success btn-sm">
+              <i class="fas fa-download"></i> Download
+            </a>
+            {% if session.get('is_admin') %}
+            <a href="{{ url_for('delete_file', file_id=file.id) }}" class="btn btn-outline-danger btn-sm">
+              <i class="fas fa-trash"></i> Delete
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="fas fa-inbox fa-3x mb-3"></i>
+    <p>No files found.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
