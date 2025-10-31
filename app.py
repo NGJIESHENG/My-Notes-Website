@@ -19,6 +19,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS']= False
 db= SQLAlchemy(app)
 migrate= Migrate(app, db)
 
+class Subject(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+
 class File(db.Model):
     id=db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
@@ -27,8 +31,10 @@ class File(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     is_public = db.Column (db.Boolean, default=False)
     file_type = db.Column(db.String(20))
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'))
 
     uploader = db.relationship('User', backref=db.backref('files', lazy=True))
+    subject = db.relationship('Subject', backref=db.backref('files', lazy=True))
 
     @staticmethod
     def get_file_type(filename): 
