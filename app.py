@@ -317,5 +317,28 @@ def view_file(file_id):
 
     return render_template('view.html', file=file, file_type=file_type, file_content=file_content)
 
+@app.route('/add_subject', methods=['GET','POST'])
+def add_subject():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if request.methos == 'POST':
+        name = request.form['name']
+
+        if name.strip() == "":
+            return "Subject name cannot be empty"
+        
+        existing = Subject.query.filter_by(name=name).first()
+        if existing:
+            return "Subject already exists"
+        
+        new_subject = Subject(name=name)
+        db.session.add(new_subject)
+        db.session.commit()
+        return redirect(url_for('upload_file'))
+    
+    subjects = Subject.query.all()
+    return render_template('add_subject.html', subjects=subjects)
+
 if __name__ == '__main__':
     app.run(debug=True)
