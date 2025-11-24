@@ -21,6 +21,12 @@
             <button type="submit" class="btn btn-success btn-lg mt-3 w-100">
               <i class="fas fa-upload"></i> Upload Now
             </button>
+            <label for ="subject">Select Subject:</label>
+            <select name="subject_id">
+              {% for subject in subjects %}
+                <option value="{{ subject.id }}">{{ subject.name }}</option>
+              {% endfor %}
+            </select>
           </form>
           {% else %}
           <div class="alert alert-warning">

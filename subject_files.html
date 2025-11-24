@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ subject.name }} Files</title>
+</head>
+<body>
+    <h1>{{ subject.name }} - Notes</h1>
+    <ul>
+        {% for file in files %}
+        <li>
+            <a href="{{ url_for('download_file', filename=file.filename) }}">
+                {{ file.filename }}
+            </a>
+        </li>
+    {% endfor %}
+    </ul>
+
+    <a href="/files">Back</a>
+</body>
+</html>

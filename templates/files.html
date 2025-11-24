@@ -7,12 +7,21 @@
   <!-- Search + Filter -->
   <form method="get" class="d-flex justify-content-center mb-4">
     <input type="text" name="search" class="form-control w-50 me-2"
-           placeholder="🔍 Search filename..." value="{{ search_query }}">
+           placeholder=" Search filename..." value="{{ search_query }}">
     <select name="file_type" class="form-select w-auto me-2">
       <option value="">All Types</option>
       <option value="pdf" {% if file_type == 'pdf' %}selected{% endif %}>PDF</option>
       <option value="text" {% if file_type == 'text' %}selected{% endif %}>Text</option>
       <option value="image" {% if file_type == 'image' %}selected{% endif %}>Image</option>
+    </select>
+
+    <select name="subject_id" class="form-select w-auto me-2">
+      <option value="">All subjects</option>
+      {% for subjects in subjects %}
+        <option value="{{ subject.id }}" {{% if subject_id == subject.id %}}selected{% endif %}>
+          {{ subject.name }}
+        </option>
+      {% endfor %}
     </select>
     <button class="btn btn-primary" type="submit">Filter</button>
   </form>
@@ -27,6 +36,9 @@
           <p class="text-muted small mb-2">
             Uploaded by: {{ file.uploader.username }}
           </p>
+          {% if file.subject %}
+            <span class="badge bg-info text-dark mb-2">{{ file.subject.name }}</span>
+          {% endif %}
 
           <!-- FILE PREVIEW -->
           {% if file.file_type == 'image' %}

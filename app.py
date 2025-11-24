@@ -170,6 +170,12 @@ def upload_file():
             flash('No selected file.', 'warning')
             return redirect(url_for('upload'))
         
+        subject_id = request.form.get("subject_id")
+
+        if not subject_id:
+            flash("Please select a subject.", "warning")
+            return redirect(url_for("upload"))
+        
         if file:
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -207,6 +213,7 @@ def list_files():
     
     search_query = request.args.get('search','').strip()
     file_type = request.args.get('file_type','').strip()
+    subject_id = request.args.get('subject_id','').strip()
 
     if is_guest:
         admin_users=User.query.filter_by(is_admin=True).all()
@@ -216,11 +223,13 @@ def list_files():
         files = File.query
     else:
         files = File.query.filter((File.is_public == True) | (File.user_id == user.id))
-    # Apply search filter
+    
     if search_query:
         files = files.filter(File.filename.ilike(f'%{search_query}%'))
     if file_type:
         files = files.filter(File.file_type == file_type)
+    if subject_id:
+        files = files.filter(File.subject_id == int(subject_id))
 
     files = files.order_by(File.id.desc()).options(db.joinedload(File.uploader)).all()
 
@@ -231,7 +240,9 @@ def list_files():
         except:
             file.size=0 
 
-    return render_template('files.html', files=files, search_query=search_query, file_type=file_type)
+    subjects = Subject.query.all()
+
+    return render_template('files.html', files=files, search_query=search_query, file_type=file_type, subject_id=subject_id, subjects=subjects)
 
 @app.route('/delete/<int:file_id>', methods=['POST'])
 def delete_file(file_id):
@@ -339,6 +350,12 @@ def add_subject():
     
     subjects = Subject.query.all()
     return render_template('add_subject.html', subjects=subjects)
+
+@app.route('/subject/<int:subject_id>')
+def subject_files(subject_id):
+    subject = Subject.query.get_or_404(subject_id)
+    files = File.query.filter_by(subject_id=subject_id).all()
+    return render_template('subject_files.html', subject=subject, files=files)
 
 if __name__ == '__main__':
     app.run(debug=True)
