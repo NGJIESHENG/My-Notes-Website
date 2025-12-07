@@ -7,7 +7,6 @@ import os
 from datetime import datetime
 from flask_migrate import Migrate
 from flask import send_from_directory
-from flask import flash
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER']='uploads'
@@ -40,9 +39,9 @@ class File(db.Model):
     def get_file_type(filename): 
         if filename.lower().endswith(('.png','.jpg','.jpeg','.gif')): 
             return 'image' 
-        elif filename.lower().endswith(('.pdf')): 
+        elif filename.lower().endswith('.pdf'): 
             return 'pdf' 
-        elif filename.lower().endswith(('.txt')): 
+        elif filename.lower().endswith('.txt'): 
             return 'text' 
         return 'other'
 
@@ -54,25 +53,12 @@ class User(db.Model):
     role = db.Column(db.String(20), default='user')
 
 
-with app.app_context():
-    #db.create_all()
-
-    if not User.query.filter_by(username='admin').first():
-        admin = User(
-            username = 'admin',
-            password=generate_password_hash('admin123'),
-            is_admin=True,
-            role='admin'
-        )
-        db.session.add(admin)
-        db.session.commit()
-
-#ensure upload folder exists
+# Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
+# ---------- ROUTES ----------
 
-#route
 @app.route('/')
 def landing():
     return render_template('landing.html')
@@ -90,11 +76,11 @@ def register():
         password = request.form.get('password')
 
         if not username or not password:
-            flash('Both fields are required to field in')
+            flash('Both fields are required', 'warning')
             return redirect (url_for('register'))
         
         if User.query.filter_by(username=username).first():
-            flash('Username already taken !')
+            flash('Username already taken!', 'danger')
             return redirect (url_for('register'))
         
         new_user = User(
@@ -105,7 +91,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        flash('Registration successful ! You can try to login now','success')
+        flash('Registration successful! You can login now','success')
         return redirect (url_for('login'))
     
     return render_template('register.html')
@@ -121,7 +107,8 @@ def login():
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
             session['is_admin'] = user.is_admin
-            flash('Login successful !','success')
+            session['logged_in'] = True
+            flash('Login successful!','success')
             return redirect(url_for('index'))
         
         flash('Invalid username or password')
@@ -136,8 +123,6 @@ def guest_login():
     flash('Logged in as Guest', 'info')
     return redirect(url_for('list_files'))
     
-    
-
 @app.route('/logout')
 def logout():
     session.clear()
@@ -145,7 +130,8 @@ def logout():
     return redirect(url_for('landing'))
 
 
-#handling file upload route
+# ---------- FILE UPLOAD ----------
+
 @app.route('/upload', methods=['GET','POST'], endpoint='upload')
 def upload_file():
 
@@ -156,49 +142,50 @@ def upload_file():
     user = User.query.get(session['user_id'])
 
     if not user or not user.is_admin:
-            flash('Admin privileges required.', 'danger')
-            return redirect(url_for('index'))
+        flash('Admin privileges required.', 'danger')
+        return redirect(url_for('index'))
     
     if request.method == 'POST':
         if 'file' not in request.files:
-            flash('No file part in the request.', 'warning')
+            flash('No file part.', 'warning')
             return redirect(url_for('upload'))
-        
 
-        file=request.files['file']
+        file = request.files['file']
+        
         if file.filename == '':
             flash('No selected file.', 'warning')
             return redirect(url_for('upload'))
         
         subject_id = request.form.get("subject_id")
-
         if not subject_id:
             flash("Please select a subject.", "warning")
             return redirect(url_for("upload"))
         
-        if file:
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
-            file_size= os.path.getsize(filepath)
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        file_size= os.path.getsize(filepath)
 
-    #save files in db
-            new_file = File(
-                filename=filename,
-                size=file_size,
-                user_id=user.id,
-                is_public=True if user.is_admin else request.form.get("make_public") == 'on',
-                uploader=user,
-                file_type=File.get_file_type(filename)
-                
-            )
-            db.session.add(new_file)
-            db.session.commit()
+        new_file = File(
+            filename=filename,
+            size=file_size,
+            user_id=user.id,
+            is_public=True,
+            uploader=user,
+            file_type=File.get_file_type(filename),
+            subject_id=subject_id
+        )
+        db.session.add(new_file)
+        db.session.commit()
 
-            flash(f'File {filename} uploaded successfuly!', 'success')
-            return redirect(url_for('list_files'))
+        flash(f'File {filename} uploaded successfully!', 'success')
+        return redirect(url_for('list_files'))
         
-    return render_template('upload.html')
+    subjects = Subject.query.all()
+    return render_template('upload.html', subjects=subjects)
+
+
+# ---------- FILE LIST ----------
 
 @app.route('/files', methods=['GET'])
 def list_files():
@@ -208,16 +195,15 @@ def list_files():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
     elif not is_guest:
-            flash('Please login to view files', 'danger')
-            return redirect(url_for('login'))
+        flash('Please login to view files', 'danger')
+        return redirect(url_for('login'))
     
     search_query = request.args.get('search','').strip()
     file_type = request.args.get('file_type','').strip()
     subject_id = request.args.get('subject_id','').strip()
 
     if is_guest:
-        admin_users=User.query.filter_by(is_admin=True).all()
-        admin_ids=[admin.id for admin in admin_users]
+        admin_ids = [admin.id for admin in User.query.filter_by(is_admin=True).all()]
         files = File.query.filter(File.is_public == True, File.user_id.in_(admin_ids))
     elif user.is_admin:
         files = File.query
@@ -234,42 +220,41 @@ def list_files():
     files = files.order_by(File.id.desc()).options(db.joinedload(File.uploader)).all()
 
     for file in files:
-        try:
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            file.size = os.path.getsize(filepath)
-        except:
-            file.size=0 
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.size = os.path.getsize(filepath) if os.path.exists(filepath) else 0
 
     subjects = Subject.query.all()
 
-    return render_template('files.html', files=files, search_query=search_query, file_type=file_type, subject_id=subject_id, subjects=subjects)
+    return render_template('files.html', files=files, search_query=search_query,
+                           file_type=file_type, subject_id=subject_id, subjects=subjects)
+
+
+# ---------- DELETE FILE ----------
 
 @app.route('/delete/<int:file_id>', methods=['POST'])
 def delete_file(file_id):
-    if'user_id' not in session:
+    if 'user_id' not in session:
         flash('Please login first')
         return redirect (url_for('login'))
     
     file = File.query.get_or_404(file_id)
 
-    #permission
     if file.user_id != session['user_id'] and not session.get('is_admin'):
         flash('You do not have permission to delete this file')
         return redirect(url_for('list_files'))
     
-    try:
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        if os.path.exists(filepath):
-            os.remove(filepath)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
-        db.session.delete(file)
-        db.session.commit()
+    db.session.delete(file)
+    db.session.commit()
 
-        flash('File deleted successfully','success')
-    except Exception as e:
-        flash('Error deleting file','error')
-
+    flash('File deleted successfully','success')
     return redirect(url_for('list_files'))
+
+
+# ---------- DOWNLOAD ----------
 
 @app.route('/download/<int:file_id>')
 def download_file(file_id):
@@ -283,16 +268,11 @@ def download_file(file_id):
         flash('You do not have permission to download this file')
         return redirect(url_for('list_files'))
     
-    try:
-        return send_from_directory(
-            app.config['UPLOAD_FOLDER'],
-            file.filename,
-            as_attachment=True
-        )
-    except FileNotFoundError:
-        flash('File not found on server')
-        return redirect(url_for('list_files'))
-    
+    return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename, as_attachment=True)
+
+
+# ---------- PREVIEW ----------
+
 @app.route('/preview/<int:file_id>')
 def preview_file(file_id):
     if 'user_id'not in session:
@@ -305,16 +285,11 @@ def preview_file(file_id):
         flash('You do not have permission to view this file')
         return redirect(url_for('list_files'))
     
-    try:
-        return send_from_directory(
-            app.config['UPLOAD_FOLDER'],
-            file.filename,
-            as_attachment=False
-        )
-    except FileNotFoundError:
-        flash('File not found on server')
-        return redirect(url_for('list_files'))
-    
+    return send_from_directory(app.config['UPLOAD_FOLDER'], file.filename, as_attachment=False)
+
+
+# ---------- VIEW TEXT ----------
+
 @app.route('/view/<int:file_id>')
 def view_file(file_id):
     file = File.query.get_or_404(file_id)
@@ -328,25 +303,31 @@ def view_file(file_id):
 
     return render_template('view.html', file=file, file_type=file_type, file_content=file_content)
 
+
+# ---------- SUBJECT ----------
+
 @app.route('/add_subject', methods=['GET','POST'])
 def add_subject():
-    if not session.get('logged_in'):
+    if 'user_id' not in session:
+        flash("Please login")
         return redirect(url_for('login'))
-    
-    if request.methos == 'POST':
-        name = request.form['name']
 
-        if name.strip() == "":
-            return "Subject name cannot be empty"
+    if request.method == 'POST':
+        name = request.form['name'].strip()
+
+        if name == "":
+            flash("Subject name cannot be empty", "warning")
+            return redirect(url_for('add_subject'))
         
         existing = Subject.query.filter_by(name=name).first()
         if existing:
-            return "Subject already exists"
+            flash("Subject already exists", "warning")
+            return redirect(url_for('add_subject'))
         
         new_subject = Subject(name=name)
         db.session.add(new_subject)
         db.session.commit()
-        return redirect(url_for('upload_file'))
+        return redirect(url_for('upload'))
     
     subjects = Subject.query.all()
     return render_template('add_subject.html', subjects=subjects)
@@ -357,5 +338,23 @@ def subject_files(subject_id):
     files = File.query.filter_by(subject_id=subject_id).all()
     return render_template('subject_files.html', subject=subject, files=files)
 
+
+# ---------- RUN APP + CREATE ADMIN SAFELY ----------
+
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+
+        # Create admin AFTER tables exist
+        if not User.query.filter_by(username='admin').first():
+            admin = User(
+                username='admin',
+                password=generate_password_hash('admin123'),
+                is_admin=True,
+                role='admin'
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("Admin user created.")
+
     app.run(debug=True)

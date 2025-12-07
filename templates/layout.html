@@ -11,7 +11,6 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
         <div class="sidebar">
             <h4 class="text-center mt-3">NoteOwl</h4>
             <hr>
@@ -25,21 +24,20 @@
             <a href="{{ url_for('upload') }}" class="menu-item {% if request.path == '/upload' %}active{% endif %}">
                 <i class="fas fa-upload me-2"></i> Upload
             </a>
+            <a href="{{ url_for('add_subject') }}" class="menu-item {% if request.path == '/add_subject' %}active{% endif %}">
+                <i class="fas fa-book-medical me-2"></i> Add Subject
+            </a>
             {% endif %}
             <a href="{{ url_for('logout') }}" class="menu-item text-danger">
                 <i class="fas fa-sign-out-alt me-2"></i> Logout
             </a>
         </div>
 
-        <!-- Main Content -->
         <div class="main-content p-4">
             {% block content %}{% endblock %}
         </div>
     </div>
 
-    
-
-    <!-- SweetAlert for Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -58,11 +56,14 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Sidebar Active Script -->
     <script>
         document.querySelectorAll('.menu-item').forEach(item => {
             const itemPath = new URL(item.href).pathname;
             const currentPath = window.location.pathname;
+            // The logic below handles partial matches for 'My Files' if it uses a query string,
+            // but the original Jinja logic is cleaner for exact matches.
+            
+            // Re-evaluating active state to match current request path exactly
             if (itemPath === currentPath) {
                 item.classList.add('active');
             } else {

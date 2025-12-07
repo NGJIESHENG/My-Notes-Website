@@ -2,78 +2,94 @@
 
 {% block content %}
 <div class="container my-5">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card shadow">
-        <div class="card-body text-center p-5">
-          <h2><i class="fas fa-cloud-upload-alt"></i> Upload Notes</h2>
-          <p class="text-muted">Select files to upload (PDF, TXT, JPG, PNG)</p>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body text-center p-5">
+                    <h2><i class="fas fa-cloud-upload-alt"></i> Upload Notes</h2>
+                    <p class="text-muted">Select files to upload (PDF, TXT, JPG, PNG)</p>
 
-          {% if session.get('is_admin') %}
-          <form action="/upload" method="post" enctype="multipart/form-data">
-            <input type="file" id="fileUpload" name="file" class="d-none" accept=".txt,.pdf,.jpg,.png" multiple>
-            <label for="fileUpload" class="btn btn-primary btn-lg mt-3">
-              <i class="fas fa-folder-open"></i> Choose File
-            </label>
+                    {% if session.get('is_admin') %}
+                    <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+                        
+                        <div class="mb-4 text-start">
+                            <label for="subjectSelect" class="form-label">Select Subject:</label>
+                          
+                            <div class="input-group">
+                            <select name="subject_id" id="subjectSelect" class="form-select" required>
+                                <option value="" disabled selected>-- Choose a Subject --</option>
+                                {% for subject in subjects %}
+                                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <a href="{{ url_for('add_subject' )}}" class="btn btn-outline-secondary" title="Create New Subject">
+                              <i class="fas fa-plus"></i> Add
+                            </a>
+                          </div>
+                            <small class="form-text text-muted">A subject is required for classification.</small>
+                        </div>
 
-            <div id="preview" class="mt-4 p-3 bg-light rounded"></div>
+                        <div class="mb-4 text-start">
+                            <label for="fileUpload" class="form-label">Choose File:</label>
+                            <input type="file" id="fileUpload" name="file" class="d-none" accept=".txt,.pdf,.jpg,.png" required>
+                            
+                            <label for="fileUpload" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-folder-open"></i> Choose File
+                            </label>
+                        </div>
 
-            <button type="submit" class="btn btn-success btn-lg mt-3 w-100">
-              <i class="fas fa-upload"></i> Upload Now
-            </button>
-            <label for ="subject">Select Subject:</label>
-            <select name="subject_id">
-              {% for subject in subjects %}
-                <option value="{{ subject.id }}">{{ subject.name }}</option>
-              {% endfor %}
-            </select>
-          </form>
-          {% else %}
-          <div class="alert alert-warning">
-            Please login as admin to upload files.
-          </div>
-          {% endif %}
+                        <div id="preview" class="mt-2 mb-4 p-3 bg-light rounded text-muted">No file selected.</div>
+                        
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-upload"></i> Upload Now
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        Please login as admin to upload files.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 
 {% endblock %}
 
-{% block scripts %}<script>
+{% block scripts %}
+<script>
 document.addEventListener('DOMContentLoaded', function() {
-  const fileInput = document.getElementById('fileUpload');
-  const preview = document.getElementById('preview');
+    const fileInput = document.getElementById('fileUpload');
+    const preview = document.getElementById('preview');
 
-  if (!fileInput || !preview) return;
+    if (!fileInput || !preview) return;
 
-  fileInput.addEventListener('change', function(event){
-    preview.innerHTML = '';
+    fileInput.addEventListener('change', function(event){
+        preview.innerHTML = ''; // Clear existing preview
 
-    if (fileInput.files.length === 0) {
-      preview.innerHTML = '<p class="text-muted">No file selected</p>';
-      return;
-    }
+        if (fileInput.files.length === 0) {
+            preview.innerHTML = 'No file selected.';
+            return;
+        }
 
-    for (let i = 0; i < fileInput.files.length; i++) {
-      const file = fileInput.files[i];
-      const fileType = file.type;
-      const fileName = file.name;
-      const fileSize = (file.size / 1024).toFixed(1);
+        // Only process the first file since your Python route handles single uploads
+        const file = fileInput.files[0];
+        const fileType = file.type;
+        const fileName = file.name;
+        const fileSize = (file.size / 1024).toFixed(1);
 
-      const item = document.createElement('div');
-      item.classList.add('mb-2', 'p-2', 'border', 'rounded', 'text-start');
+        const item = document.createElement('div');
+        item.classList.add('p-2', 'border', 'rounded', 'text-start', 'bg-white');
 
-      let icon = '<i class="fas fa-file"></i>';
-      if (fileType.includes('pdf')) icon = '<i class="fas fa-file-pdf text-danger"></i>';
-      else if (fileType.includes('image')) icon = '<i class="fas fa-file-image text-info"></i>';
-      else if (fileType.includes('text')) icon = '<i class="fas fa-file-alt text-secondary"></i>';
+        let icon = '<i class="fas fa-file"></i>';
+        if (fileType.includes('pdf')) icon = '<i class="fas fa-file-pdf text-danger"></i>';
+        else if (fileType.includes('image')) icon = '<i class="fas fa-file-image text-info"></i>';
+        else if (fileType.includes('text')) icon = '<i class="fas fa-file-alt text-secondary"></i>';
 
-      item.innerHTML = `${icon} <strong>${fileName}</strong> <span class="text-muted">(${fileSize} KB)</span>`;
-      preview.appendChild(item);
-    }
-  });
+        item.innerHTML = `${icon} <strong>${fileName}</strong> <span class="text-muted">(${fileSize} KB)</span>`;
+        preview.appendChild(item);
+    });
 });
 </script>
-    {% endblock %}
+{% endblock %}

@@ -1,86 +1,89 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container my-5">
-  <h2 class="mb-4 text-center"><i class="fas fa-folder-open"></i> Shared Files</h2>
-  <p class="text-center text-muted">Browse uploaded notes and resources</p>
+    <h2 class="mb-4 text-center"><i class="fas fa-folder-open"></i> Shared Files</h2>
+    <p class="text-center text-muted">Browse uploaded notes and resources</p>
 
-  <!-- Search + Filter -->
-  <form method="get" class="d-flex justify-content-center mb-4">
-    <input type="text" name="search" class="form-control w-50 me-2"
-           placeholder=" Search filename..." value="{{ search_query }}">
-    <select name="file_type" class="form-select w-auto me-2">
-      <option value="">All Types</option>
-      <option value="pdf" {% if file_type == 'pdf' %}selected{% endif %}>PDF</option>
-      <option value="text" {% if file_type == 'text' %}selected{% endif %}>Text</option>
-      <option value="image" {% if file_type == 'image' %}selected{% endif %}>Image</option>
-    </select>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form method="get" class="d-flex mb-4">
+                <input type="text" name="search" class="form-control me-2" style="max-width: 40%;"
+                       placeholder=" Search filename..." value="{{ search_query }}">
+                
+                <select name="file_type" class="form-select me-2">
+                    <option value="">All Types</option>
+                    <option value="pdf" {% if file_type == 'pdf' %}selected{% endif %}>PDF</option>
+                    <option value="text" {% if file_type == 'text' %}selected{% endif %}>Text</option>
+                    <option value="image" {% if file_type == 'image' %}selected{% endif %}>Image</option>
+                </select>
 
-    <select name="subject_id" class="form-select w-auto me-2">
-      <option value="">All subjects</option>
-      {% for subjects in subjects %}
-        <option value="{{ subject.id }}" {{% if subject_id == subject.id %}}selected{% endif %}>
-          {{ subject.name }}
-        </option>
-      {% endfor %}
-    </select>
-    <button class="btn btn-primary" type="submit">Filter</button>
-  </form>
-
-  {% if files %}
-  <div class="row g-3">
-    {% for file in files %}
-    <div class="col-md-6 col-lg-4">
-      <div class="card shadow-sm border-0 rounded-3 h-100">
-        <div class="card-body text-center">
-          <h5 class="mt-2">{{ file.filename }}</h5>
-          <p class="text-muted small mb-2">
-            Uploaded by: {{ file.uploader.username }}
-          </p>
-          {% if file.subject %}
-            <span class="badge bg-info text-dark mb-2">{{ file.subject.name }}</span>
-          {% endif %}
-
-          <!-- FILE PREVIEW -->
-          {% if file.file_type == 'image' %}
-            <img src="{{ url_for('preview_file', file_id=file.id) }}" 
-                 class="img-fluid rounded mb-2" style="max-height: 150px;">
-          {% elif file.file_type == 'pdf' %}
-            <embed src="{{ url_for('preview_file', file_id=file.id) }}" 
-                   type="application/pdf" width="100%" height="150px" class="rounded mb-2">
-          {% elif file.file_type == 'text' %}
-            {% set path = 'uploads/' + file.filename %}
-            <iframe src="{{ url_for('preview_file', file_id=file.id) }}" 
-                    class="rounded bg-light" width="100%" height="150px"></iframe>
-          {% else %}
-            <i class="fas fa-file fa-3x text-muted mb-2"></i>
-          {% endif %}
-
-          <p class="text-muted small">
-            Type: {{ file.file_type | capitalize }} | Size: {{ (file.size / 1024)|round(1) }} KB
-          </p>
-
-          <div class="mt-2">
-            <a href="{{ url_for('download_file', file_id=file.id) }}" class="btn btn-outline-success btn-sm">
-              <i class="fas fa-download"></i> Download
-            </a>
-            {% if session.get('is_admin') %}
-            <form action="{{ url_for('delete_file', file_id=file.id) }}" method="post" class="d-inline">
-                <button class="btn btn-outline-danger btn-sm" type="submit">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
+                <select name="subject_id" class="form-select me-2">
+                    <option value="">All subjects</option>
+                    {% for subject in subjects %}
+                        <option value="{{ subject.id }}" {% if subject_id|string == subject.id|string %}selected{% endif %}>
+                            {{ subject.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-primary" type="submit">Filter</button>
             </form>
-            {% endif %}
-          </div>
         </div>
-      </div>
     </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="text-center py-5 text-muted">
-    <i class="fas fa-inbox fa-3x mb-3"></i>
-    <p>No files found.</p>
-  </div>
-  {% endif %}
+    
+    {% if files %}
+    <div class="row g-3">
+        {% for file in files %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 rounded-3 h-100">
+                <div class="card-body text-center">
+                    <h5 class="mt-2">{{ file.filename }}</h5>
+                    <p class="text-muted small mb-2">
+                        Uploaded by: {{ file.uploader.username }}
+                    </p>
+                    {% if file.subject %}
+                        <span class="badge bg-info text-dark mb-2">{{ file.subject.name }}</span>
+                    {% endif %}
+
+                    {% if file.file_type == 'image' %}
+                        <img src="{{ url_for('preview_file', file_id=file.id) }}" 
+                             class="img-fluid rounded mb-2" style="max-height: 150px; height: 150px; object-fit: contain;">
+                    {% elif file.file_type == 'pdf' %}
+                        <embed src="{{ url_for('preview_file', file_id=file.id) }}" 
+                               type="application/pdf" width="100%" height="150px" class="rounded mb-2">
+                    {% elif file.file_type == 'text' %}
+                        <iframe src="{{ url_for('preview_file', file_id=file.id) }}" 
+                                class="rounded bg-light" width="100%" height="150px"></iframe>
+                    {% else %}
+                        <div style="height: 150px; display: flex; align-items: center; justify-content: center;" class="rounded bg-light mb-2">
+                            <i class="fas fa-file fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    <p class="text-muted small">
+                        Type: {{ file.file_type | capitalize }} | Size: {{ (file.size / 1024)|round(1) }} KB
+                    </p>
+
+                    <div class="mt-2">
+                        <a href="{{ url_for('download_file', file_id=file.id) }}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                        {% if session.get('is_admin') %}
+                        <form action="{{ url_for('delete_file', file_id=file.id) }}" method="post" class="d-inline">
+                            <button class="btn btn-outline-danger btn-sm" type="submit">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="fas fa-inbox fa-3x mb-3"></i>
+        <p>No files found.</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
